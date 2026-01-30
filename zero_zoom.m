@@ -1,0 +1,82 @@
+data = readmatrix('time_domain_data.txt');
+% data = readmatrix('synthetic_time_domain_data.txt');
+
+%data = double(data);   % force numeric safety
+
+t = data(:,1);
+signal_cols = 2:size(data,2);
+
+dt = mean(diff(t));
+Fs = 1/dt;
+fprintf('Sampling frequency: %.2f GHz\n', Fs/1e9);
+
+%ZOOM WINDOW
+t_start = 1.00e-6;   % 1.00 µs
+t_end   = 1.05e-6;   % 1.05 µs
+
+for k = signal_cols
+
+    % Signal
+    v = data(:,k);
+    v = v - mean(v);
+    sign_v = sign(v);
+    zc_idx = find(sign_v(1:end-1) < 0 & sign_v(2:end) > 0);
+    t_zc = t(zc_idx);
+    t_zc = t_zc(:);
+
+    T_inst = diff(t_zc);
+    f_inst = 1 ./ T_inst;
+    t_f = t_zc(1:end-1);
+
+    f0 = mean(f_inst);
+    delta_f = f_inst - f0;
+    Fs_f = 1 / mean(diff(t_f));
+    [PSD, f_psd] = pwelch(delta_f, [], [], [], Fs_f);
+
+    T0 = mean(diff(t_zc));
+    n = (0:length(t_zc)-1)';
+    t_ideal = t_zc(1) + n*T0;
+    phi_dev = 2*pi*(t_zc - t_ideal)/T0;
+
+    %ZOOM INDICES 
+    idx_sig = (t >= t_start) & (t <= t_end);
+    idx_zc  = (t_zc >= t_start) & (t_zc <= t_end);
+    idx_id  = (t_ideal >= t_start) & (t_ideal <= t_end);
+    idx_if  = (t_f >= t_start) & (t_f <= t_end);
+
+    %ZERO CROSSING PLOT
+    figure;
+    plot(t(idx_sig)*1e6, v(idx_sig), 'k'); hold on;
+    plot(t_zc(idx_zc)*1e6, zeros(sum(idx_zc),1), 'bo', 'MarkerSize', 6);
+    plot(t_ideal(idx_id)*1e6, zeros(sum(idx_id),1), 'ro', 'MarkerSize', 6);
+    xlabel('Time (\mus)');
+    ylabel('Voltage (V)');
+    title(sprintf('Zero crossing deviation – Column %d', k));
+    legend('Signal','Detected ZC','Ideal ZC');
+    grid on;
+
+    %ZOOMED INSTANTANEOUS FREQUENCY
+    figure;
+    plot(t_f(idx_if)*1e6, f_inst(idx_if)/1e9, 'b.-');
+    xlabel('Time (\mus)');
+    ylabel('Instantaneous Frequency (GHz)');
+    title(sprintf('Instantaneous Frequency (zoomed) – Column %d', k));
+    grid on;
+
+    %ZOOMED PHASE DEVIATION 
+    figure;
+    plot(t_zc(idx_zc)*1e6, phi_dev(idx_zc), 'r.-');
+    xlabel('Time (\mus)');
+    ylabel('Phase deviation (rad)');
+    title(sprintf('Phase deviation (zoomed) – Column %d', k));
+    grid on;
+
+    %PSD
+    figure;
+    loglog(f_psd, PSD);
+    xlabel('Frequency offset (Hz)');
+    ylabel('S_f (Hz^2/Hz)');
+    title(sprintf('Frequency Noise PSD – Column %d', k));
+    grid on;
+
+end

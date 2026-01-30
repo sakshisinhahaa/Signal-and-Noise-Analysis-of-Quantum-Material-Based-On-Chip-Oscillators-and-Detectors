@@ -1,7 +1,7 @@
 data = readmatrix('time_domain_data.txt');  
 % data = readmatrix('synthetic_time_domain_data.txt');
 
-%data = double(data);   % force numeric safety
+data = double(data);   % force numeric safety
 
 t = data(:,1);                
 signal_cols = 2:size(data,2); 
@@ -9,6 +9,10 @@ signal_cols = 2:size(data,2);
 dt = mean(diff(t));
 Fs = 1/dt;  
 fprintf('Sampling frequency: %.2f GHz\n', Fs/1e9);
+
+%ZOOM WINDOW
+t_start = 1.00e-6;   % 1.00 µs
+t_end   = 1.05e-6;   % 1.05 µs
 
 for k = signal_cols
     
@@ -19,6 +23,7 @@ for k = signal_cols
     sign_v = sign(v);
     zc_idx = find(sign_v(1:end-1) < 0 & sign_v(2:end) > 0);
     t_zc = t(zc_idx);
+
 
     % Safety check
     % if length(t_zc) < 10
@@ -52,6 +57,11 @@ for k = signal_cols
     t_ideal = t_zc(1) + n*T0;
     phi_dev = 2*pi*(t_zc - t_ideal)/T0;
 
+    % Zoom window indices
+    idx_win = (t >= t_start) & (t <= t_end);
+    idx_zc  = (t_zc >= t_start) & (t_zc <= t_end);
+    idx_id  = (t_ideal >= t_start) & (t_ideal <= t_end);
+
     % Instantaneous frequency
     figure;
     plot(t_f*1e6, f_inst/1e9, '.-');
@@ -75,4 +85,16 @@ for k = signal_cols
     ylabel('S_f (Hz^2/Hz)');
     title(sprintf('Frequency Noise PSD – Column %d', k));
     grid on;
+
+    figure;
+    plot(t(idx_win)*1e6, v(idx_win), 'k'); hold on;
+    plot(t_zc(idx_zc)*1e6, zeros(sum(idx_zc),1), 'bo', 'MarkerSize', 6);
+    plot(t_ideal(idx_id)*1e6, zeros(sum(idx_id),1), 'ro', 'MarkerSize', 6);
+
+    xlabel('Time (\mus)');
+    ylabel('Voltage (V)');
+    title(sprintf('Zero crossing deviation – Column %d', k));
+    legend('Signal','Detected ZC','Ideal ZC');
+    grid on;
+
 end
