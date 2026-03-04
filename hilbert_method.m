@@ -6,6 +6,9 @@ signals = data(:,2:4);
 
 num_channels = size(signals,2);
 
+t_start = 1.00e-6;   % 1.00 µs
+t_end   = 1.05e-6;   % 1.05 µs
+
 figure; %fig for PSD plot
 hold on;
 
@@ -67,6 +70,10 @@ for ch = 1:num_channels
     % Welch PSD estimation
     [PSD, f_psd] = pwelch(delta_f,hanning(Nseg), overlap, [], Fs_f);
     loglog(f_psd, PSD, 'LineWidth', 1.5);
+    
+    idx_win = (t >= t_start) & (t <= t_end);
+    idx_zc  = (t_zc >= t_start) & (t_zc <= t_end);
+    idx_id  = (t_ideal >= t_start) & (t_ideal <= t_end);
 
 end
 grid on;

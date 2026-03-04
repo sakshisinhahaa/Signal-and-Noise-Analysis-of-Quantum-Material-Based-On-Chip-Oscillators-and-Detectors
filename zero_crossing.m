@@ -10,27 +10,21 @@ dt = mean(diff(t));
 Fs = 1/dt;  
 fprintf('Sampling frequency: %.2f GHz\n', Fs/1e9);
 
-%% Loop over channels
 for k = signal_cols
     
     fprintf('\n--- Column %d ---\n', k);
-
-    %% Signal
     v = data(:,k);            
     v = v - mean(v);          % remove DC
 
-    %% Zero-crossing detection (negative → positive)
     sign_v = sign(v);
     zc_idx = find(sign_v(1:end-1) < 0 & sign_v(2:end) > 0);
     t_zc = t(zc_idx);
     t_zc = t_zc(:);
 
-    %% Instantaneous frequency
     T_inst = diff(t_zc);
     f_inst = 1 ./ T_inst;
     t_f = t_zc(1:end-1);
 
-    %% Frequency fluctuation
     f0 = mean(f_inst);
     delta_f = f_inst - f0;
 

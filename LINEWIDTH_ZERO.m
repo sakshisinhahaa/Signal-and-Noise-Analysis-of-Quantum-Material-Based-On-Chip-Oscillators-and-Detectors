@@ -8,14 +8,12 @@ dt = mean(diff(t));
 Fs = 1/dt;
 fprintf('Sampling frequency: %.2f GHz\n', Fs/1e9);
 
-%% ---------------- LOOP OVER CHANNELS ----------------
 for k = signal_cols
 
     fprintf('\n==============================\n');
     fprintf('Processing Column %d\n', k);
     fprintf('==============================\n');
 
-    %% -------- SIGNAL --------
     v = data(:,k);
     v = v - mean(v);           % remove DC
 
